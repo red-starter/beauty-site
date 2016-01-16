@@ -1,15 +1,10 @@
-// tree specific things
 angular.module('beautystash.profileTree', [])
 .controller('ProfileTreeController', function($scope, Products, Follow, Sites, $stateParams, Auth, ModalService) {
-  // *****************  Tree Helpers  **********************
   // ***************** DATA PROCESSING AND TREE GENERATION ******************
-  // build hash tables to get access to different properties insta 
   // get inputs in, dynamically build tree based on specified user inputs i.e. BRAND -> CATEGORY -> PRODUCT
   // or STATUS -> BRAND -> PRODUCT , or BRAND -> PRODUCT //product always last by default
-  // so status is own tree
-  // after tree is built, toggle all children off , except 
+  // after tree is built, toggle all children off 
   // the default children accessor assumes each input data is an object with a children array
-  // console.log('using this controller')
   var Tree = function(obj){
     this.value = obj.value || null;
     this.products = obj.products || []
@@ -17,7 +12,7 @@ angular.module('beautystash.profileTree', [])
     this.children = [];
   }
 
-
+  // *****************  Tree Helpers  **********************
   //return array of all specified properties and concat them
   var pluck = function(array,property){
     var properties = Array.prototype.slice.call(arguments,1)
@@ -67,7 +62,6 @@ angular.module('beautystash.profileTree', [])
     //iterate over array and push each object keyed by property to tree children
     for (var i = 0; i < resArr.length; i++) {
       var obj = resArr[i];
-      // console.log(obj)
       var newTree = new Tree(obj)
       tree.children.push(newTree)
     };
@@ -79,7 +73,7 @@ angular.module('beautystash.profileTree', [])
 
   // ***************** TREE SEARCHES ************************
   // helper to get y-coords from tree nodes
-  // traverse down and get y-coordnates to achor rects and labels to 
+  // traverse down and get y-coordnates to achor labels to 
   var returnYDFS = function(node,path){
     path = path || []
     path.push(node.y)
@@ -90,8 +84,6 @@ angular.module('beautystash.profileTree', [])
   }
   // helper to toggle all nodes bfs
   var toggleToDepthBFS = function(tree,depth){
-    // svg.selectAll('.productImage').remove();
-
     // go n-1 deep
     // root always toggle on
     // start at roots kids
@@ -100,28 +92,24 @@ angular.module('beautystash.profileTree', [])
     for (var i = 0; i < depth-1; i++) {
       curArr = nextArr;
       nextArr = [];
-      // console.log(curArr)
       // iterate through children and toggle them
       for (var j = 0; j < curArr.length; j++) {
         node = curArr[j];
-        // console.log('collapsing',node.value)
         if (node._children){
           node.children = node._children
           node._children = null
         }
-        // update(node)
         // push kids to next arr
         nextArr = nextArr.concat(node.children);
       };
     };
-    // now have access to all nodes in the end, want untoggle if toggled
+    // now have access to all nodes in the end, want toglle of if toggled on
     for (var i = 0; i < nextArr.length; i++) {
       node = nextArr[i];
       if (node.children){
         node._children = node.children;
         node.children = null;
       }
-      // update(node)
     };
   }
   // *************** MAKE TREE INTERACTIVE ****************
@@ -181,11 +169,6 @@ angular.module('beautystash.profileTree', [])
         .attr("class", "node")
         .attr("transform", function(d) { return "translate(" + source.x0 + "," +  source.y0+ ")"; })
         .on("click", function(d){
-          // svg.selectAll('.productImage').remove();
-          // if (d.depth === maxDepth){
-            // buildImage(d.)
-            // buildImage(d)
-          // }
           toggleChildren(d,root)
         });
 
@@ -211,40 +194,8 @@ angular.module('beautystash.profileTree', [])
 
     nodeEnter.append("text")
       .attr("dx", function(d){return -22})
-        // .5/4*JSON.stringify(d.value).length})
       .text(function(d){return d.value ? d.value.split(' ')[0] :null})
       .attr('style','font-size:15px;text-align:center;padding:2px;margin:2px;color:#707175;')
-    // container for wrapped text
-    // nodeEnter.append('foreignObject')
-    //     .attr('x', -side/2)
-    //     .attr('y', -side/2)
-    //     .attr('width', side)
-    //     .attr('height', side)
-    //     .on('mouseenter',function(d){
-    //     })
-    //     .on('mouseleave',function(d){
-    //       d3.select(this).attr('width', side).attr('height', side)
-    //     })
-    //     // .attr('color', 'light-blue')
-    //     .appenbd('xhtml:p')
-    //     .text(function(d){return d.value})
-    //     .attr('style','text-align:center;padding:2px;margin:2px;color:#707175;')
-        // .attr('style',function(d){return d._children ? "color:#707175;":"color:#E8E8E8;";})
-
-
-
-
-    // nodeEnter.append("text")
-    //     // .attr("y", function(d) {return d.children || d._children ? -10 : 10; })
-    //     .attr("x", function(d) { return -30})
-    //     .attr("y", function(d) { return -30})
-    //     .attr("dy", ".35em")
-    //     // .attr("text-anchor",function(d){return d})
-    //       // function(d) { return d.children || d._children ? "end" : "start"; })
-    //     // .text(function(d{ return JSON.stringify(pluck(d.products,'product_name')) })
-    //     .text(function(d) { return d.value })
-    //     // .attr("transform", function(d) { return "rotate(20)"; })
-    //     .style("fill-opacity", 1e-5);
 
     // Transition nodes to their new position.
     var duration = 750;
@@ -365,7 +316,6 @@ angular.module('beautystash.profileTree', [])
 
   var buildLabeledRectangles = function(data,classed,fill){
     // build rectangles
-    // console.log(data,classed,fill)
     svg.selectAll(classed)
       .data(data)
       .enter()
@@ -390,6 +340,7 @@ angular.module('beautystash.profileTree', [])
       .text(function(d) {return beautifyText(d)})
     }
 
+  // add user interactivity to DOM elements based on class
   var addHover = function(classed,opacity){
     opacity = opacity || 0.6
     svg.selectAll(classed)
@@ -419,7 +370,7 @@ angular.module('beautystash.profileTree', [])
           datum.order = index;
         })
       } else {
-        // not inconfig_table
+        // not in config_table
         config_table.push(d)
         d.order =config_table.length -1
       }
@@ -430,8 +381,6 @@ angular.module('beautystash.profileTree', [])
 
   var buildImage = function(data){
     svg.selectAll('.productImage').remove();
-    // console.log('buildImage')
-    // console.log(data)
     svg.selectAll('.productImage')
     .data([data])
     .enter()
@@ -442,13 +391,7 @@ angular.module('beautystash.profileTree', [])
     .attr('width', 70)
     .attr('height', 70)
     .attr('xlink:href',"images.jpg")
-    // .attr("xmlns","https://cdn.css-tricks.com/wp-content/uploads/2015/05/kiwi.svg")
-      // function(d) { return d.personal_notes})
-  // <img src="pic_mountain.jpg" alt="Mountain View" style="width:304px;height:228px;">
-    // .attr("dy", ".35em")
-    // .text(function(d){
-      // return d.products[0].photo;
-    // })
+  
   }
   var buildApp = function(data,tree_config,options){
     var root = new Tree({value:'root',products:data});
@@ -480,8 +423,8 @@ angular.module('beautystash.profileTree', [])
     addHover('.build')
 
     // bfs toggle
-    selectLabel = svg.selectAll('.label')
-    // console.log(selectLabel)
+    var selectLabel = svg.selectAll('.label')
+
     selectLabel
     .data(labels)
     .on('click',function(d){
@@ -496,14 +439,11 @@ angular.module('beautystash.profileTree', [])
     
     svg.selectAll('.build')
     .on('click',function(){
-      // use filthy globals
       rebuild(data,filter_order,options)
-      // filter_order = []
     })
   }
 
   var rebuild = function(data,filter_order,options){
-    // console.log('clicked',filter_order)
     if (filter_order.length >0){
       // remove everything
       svg.selectAll('.label').remove()
@@ -511,7 +451,6 @@ angular.module('beautystash.profileTree', [])
       svg.selectAll("g.node").remove()
       svg.selectAll("path.link").remove()
 
-      // console.log(data,filter_order,'options',options)
       buildApp(data,filter_order,options);        
     }
   }
@@ -525,6 +464,7 @@ angular.module('beautystash.profileTree', [])
   // stores order of configurations
 
   // ***************** BUILD APP *****************
+  // Fetch user products in db then display the fetched products
     Products.getAllProducts(Auth).then(function(data){
     product_data = data['userProducts']
     buildApp(product_data,initial_tree_config,options_table);
