@@ -1,3 +1,4 @@
+// controller for D3.js visualization of the user Products
 angular.module('beautystash.profileTree', [])
 .controller('ProfileTreeController', function($scope, Products, Follow, Sites, $stateParams, Auth, ModalService) {
   // ***************** DATA PROCESSING AND TREE GENERATION ******************
@@ -11,7 +12,6 @@ angular.module('beautystash.profileTree', [])
     this.type = obj.type || null;
     this.children = [];
   }
-
   // *****************  Tree Helpers  **********************
   //return array of all specified properties and concat them
   var pluck = function(array,property){
@@ -43,7 +43,6 @@ angular.module('beautystash.profileTree', [])
     //resArr contain an array of objects, with value i.e. brand_name and children and array of products that have that value
     return resArr;
   }
-
   var populateTree = function(config,tree,index){
     index = index || 0;
     //base case, done iterating
@@ -57,7 +56,7 @@ angular.module('beautystash.profileTree', [])
       return;
     }
     var property = config[index];
-    //get array of objects grouped by their property value i.e. brand_names, statuses
+    //get array of objects grouped by their property value i.e. brand_names, status
     var resArr = groupByProperty(tree.products,property);
     //iterate over array and push each object keyed by property to tree children
     for (var i = 0; i < resArr.length; i++) {
@@ -73,7 +72,7 @@ angular.module('beautystash.profileTree', [])
 
   // ***************** TREE SEARCHES ************************
   // helper to get y-coords from tree nodes
-  // traverse down and get y-coordnates to achor labels to 
+  // traverse down DFS style and get y-coordnates to anchor rectangle labels 
   var returnYDFS = function(node,path){
     path = path || []
     path.push(node.y)
@@ -82,7 +81,7 @@ angular.module('beautystash.profileTree', [])
     } 
     return returnYDFS(node.children[0],path)
   }
-  // helper to toggle all nodes bfs
+  // helper to toggle all nodes bfs style
   var toggleToDepthBFS = function(tree,depth){
     // go n-1 deep
     // root always toggle on
@@ -103,7 +102,7 @@ angular.module('beautystash.profileTree', [])
         nextArr = nextArr.concat(node.children);
       };
     };
-    // now have access to all nodes in the end, want toglle of if toggled on
+    // now have access to all nodes in the end, want toggle off if toggled on
     for (var i = 0; i < nextArr.length; i++) {
       node = nextArr[i];
       if (node.children){
@@ -126,6 +125,7 @@ angular.module('beautystash.profileTree', [])
   var margin = {top: 20, right: 120, bottom: 20, left: 120},
       width = 1000 - margin.right - margin.left,
       height = 1200 - margin.top - margin.bottom;
+  //god variable
   var god = {
     width : width,
     height : height
@@ -146,10 +146,10 @@ angular.module('beautystash.profileTree', [])
     var d3tree = d3.layout.tree().size([width+20,height]);
     var nodes = d3tree.nodes(root).slice(1),
         links = d3tree.links(nodes);
-    // the d3 tree class dynamically calculates new d.y d.x, so if want to make them
+    // the d3 tree class dynamically calculates new d.y d.x, so if we want to make them
     // constant declare the x and y here
     var maxDepth = returnYDFS(root).length-1
-
+    //specify y-coordniates of nodes
     nodes.forEach(function(d){
       if (d.depth === 0){
         d.y = 0
@@ -160,7 +160,6 @@ angular.module('beautystash.profileTree', [])
         d.y = Math.pow(d.depth,2/3) * 200
       }
     })
-
     var i = 0;
     var node = svg.selectAll("g.node")
         .data(nodes, function(d) { return d.id || (d.id = ++i); });
@@ -197,7 +196,7 @@ angular.module('beautystash.profileTree', [])
       .text(function(d){return d.value ? d.value.split(' ')[0] :null})
       .attr('style','font-size:15px;text-align:center;padding:2px;margin:2px;color:#707175;')
 
-    // Transition nodes to their new position.
+    // Transition nodes to their new position ovr time.
     var duration = 750;
     var nodeUpdate = node.transition()
         .duration(duration)
@@ -339,8 +338,7 @@ angular.module('beautystash.profileTree', [])
 
       .text(function(d) {return beautifyText(d)})
     }
-
-  // add user interactivity to DOM elements based on class
+  // adds hover interactivity to DOM elements with passed in class
   var addHover = function(classed,opacity){
     opacity = opacity || 0.6
     svg.selectAll(classed)
@@ -351,12 +349,12 @@ angular.module('beautystash.profileTree', [])
         d3.select(this).attr("opacity",1)
       })
   }
-
+  //
   var updateClassText = function(classed){
     var text = svg.selectAll('text'+classed)
     text.text(function(d){value = beautifyText(d); return d.order !== null && value + ' ' + (d.order + 1) || value})       
   }
-
+  //allows users to specify filter order of tree
   var addFilterOrder = function(classed,config_table,cb){
     var data = svg.selectAll(classed)
     data.on('click',function(d){
@@ -378,7 +376,8 @@ angular.module('beautystash.profileTree', [])
       updateClassText(classed);
     })
   }
-
+  
+  // add images to tree nodes, this part is not smooth yet ...
   var buildImage = function(data){
     svg.selectAll('.productImage').remove();
     svg.selectAll('.productImage')
@@ -393,38 +392,36 @@ angular.module('beautystash.profileTree', [])
     .attr('xlink:href',"images.jpg")
   
   }
+  
+  // initializes the state of the application
   var buildApp = function(data,tree_config,options){
     var root = new Tree({value:'root',products:data});
     //build tree based on tree configuration
-    // console.log(tree_config,root)
     populateTree(tree_config,root)
-    // console.log(root)
     // where the root starts off at then transitioned w/ diagonal
     root.x0 = (width + margin.right + margin.left)/2;
     root.y0 = 0;
     //render Tree
     update(root,root)
-
+    
+    // add labels to filters
     var labels = createLabels(tree_config,50,150,root);
-    // console.log(labels)
+    // build the config table
     var options_table = createConfigTable(options,50,150)
-    // console.log(options_table)
     var buildButton = {x:width, y:margin.top, width:150, height:50, value:'build tree'}
+    
     // render labels and buttons
-
     buildLabeledRectangles(labels,'label')
     buildLabeledRectangles(options_table,'options_table','#707175')
     buildLabeledRectangles([buildButton],'build','#707175')
 
-    //*********** add events to classes *************
+    //*********** add events to DOM element classes *************
     // change global filter order
     addHover('.options_table')
     addHover('.label')
     addHover('.build')
-
-    // bfs toggle
-    var selectLabel = svg.selectAll('.label')
-
+    // give bfs toggle functionality
+    selectLabel = svg.selectAll('.label')
     selectLabel
     .data(labels)
     .on('click',function(d){
@@ -442,10 +439,11 @@ angular.module('beautystash.profileTree', [])
       rebuild(data,filter_order,options)
     })
   }
-
+  
+  // rebuild filters
   var rebuild = function(data,filter_order,options){
     if (filter_order.length >0){
-      // remove everything
+      // remove previous labels
       svg.selectAll('.label').remove()
       svg.selectAll('.options_table').remove()
       svg.selectAll("g.node").remove()
@@ -454,7 +452,7 @@ angular.module('beautystash.profileTree', [])
       buildApp(data,filter_order,options);        
     }
   }
-  // ********** RENDER TREE AND TABLES **************
+  // *************** RENDER TREE AND TABLES *****************
   // define globals here
   // get parsed data from helper function
 
@@ -463,8 +461,8 @@ angular.module('beautystash.profileTree', [])
   var initial_tree_config = ['brand_name','product_category','product_size','product_status']
   // stores order of configurations
 
-  // ***************** BUILD APP *****************
-  // Fetch user products in db then display the fetched products
+  // ******************** BUILD APP ********************
+  // fetch user products from DB and build the tree
     Products.getAllProducts(Auth).then(function(data){
     product_data = data['userProducts']
     buildApp(product_data,initial_tree_config,options_table);
